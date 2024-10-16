@@ -77,7 +77,8 @@ function randomStringWithPrefix(
   allowedSymbols = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
   length = 20
 ) {
-  return `${prefix}${generateKey(length, allowedSymbols)}`.slice(0, length);
+  const randomStr = generateKey(length, allowedSymbols);
+  return prefix + randomStr;
 }
 
 module.exports = {
