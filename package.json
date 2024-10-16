@@ -1,0 +1,31 @@
+{
+  "name": "testrunner",
+  "version": "1.0.0",
+  "description": "NodeJS native test runner template",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "lint": "eslint 'tests/**/*.cjs'",
+    "lint:fix": "eslint 'tests/**/*.cjs' --fix",
+    "format": "prettier --write 'tests/**/*.cjs'",
+    "test:all": "npm run test:unit && npm run test:integration",
+    "test:unit": "node --test tests/unit/*.cjs",
+    "test:integration": "node --test tests/integration/**/*.cjs",
+    "test:watch": "node --test --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "undici": "^6.20.1"
+  },
+  "devDependencies": {
+    "eslint": "^9.12.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "prettier": "^3.3.3"
+  }
+}
