@@ -115,18 +115,16 @@ const SALT_LEN = 32;
 const KEY_LEN = 64;
 
 const hashPassword = async (password) => {
-  try {
-    const salt = await crypto.randomBytes(SALT_LEN);
-    const hash = await crypto.scryptSync(
-      password,
-      salt,
-      KEY_LEN,
-      SCRYPT_PARAMS
-    );
-    return serializeHash(hash, salt);
-  } catch (err) {
-    throw new Error('Error hashing the password: ' + err);
-  }
+  const salt = crypto.randomBytes(SALT_LEN);
+  return new Promise((resolve, reject) => {
+    crypto.scrypt(password, salt, KEY_LEN, SCRYPT_PARAMS, (err, derivedKey) => {
+      if (err) {
+        reject(new Error('Error hashing the password: ' + err.message));
+      } else {
+        resolve(serializeHash(derivedKey, salt));
+      }
+    });
+  });
 };
 
 let defaultHash;
@@ -141,14 +139,19 @@ hashPassword('')
 const validatePassword = (password, serHash = defaultHash) => {
   const { params, salt, hash } = deserializeHash(serHash);
   return new Promise((resolve, reject) => {
-    const callback = (err, hashedPassword) => {
-      if (err) {
-        reject(err);
-        return;
+    crypto.scrypt(
+      password,
+      salt,
+      hash.length,
+      params,
+      (err, hashedPassword) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(crypto.timingSafeEqual(hashedPassword, hash));
       }
-      resolve(crypto.timingSafeEqual(hashedPassword, hash));
-    };
-    crypto.scrypt(password, salt, hash.length, params, callback);
+    );
   });
 };
 
