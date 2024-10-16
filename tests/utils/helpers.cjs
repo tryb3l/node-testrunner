@@ -1,4 +1,4 @@
-const { beforeEach, afterEach } = require('node:test');
+'use strict';
 const {
   randomEmail,
   randomPassword,
