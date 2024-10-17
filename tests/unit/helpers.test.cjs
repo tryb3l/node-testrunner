@@ -24,11 +24,11 @@ test('createRequestOptions returns correct options', () => {
   );
 });
 
-test('createTestUser generates a user with email, password, and username', () => {
-  const testUser = createTestUser();
-  assert.ok(testUser.user.email, 'Email is missing');
-  assert.ok(testUser.user.password, 'Password is missing');
-  assert.ok(testUser.user.username, 'Username is missing');
+test('createTestUser generates a user with email, password, and username', async () => {
+  const { userData } = await createTestUser();
+  assert.ok(userData.email, 'Email is missing');
+  assert.ok(userData.password, 'Password is missing');
+  assert.ok(userData.username, 'Username is missing');
 });
 
 test('setupContext returns an object with userData', () => {
