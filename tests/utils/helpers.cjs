@@ -5,8 +5,9 @@ const {
   randomUsername,
   randomDate,
 } = require('./data-creator.cjs');
+require('dotenv').config();
 
-global.$ConduitAPI = 'https://conduit-api.bondaracademy.com/api';
+global.$ConduitAPI = process.env.CONDUIT_API;
 
 function createTestUser() {
   return {
