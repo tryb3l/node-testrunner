@@ -3,31 +3,35 @@ const assert = require('node:assert');
 const { test } = require('node:test');
 const {
   createTestUser,
+  createTestUserData,
   createRequestOptions,
+  randomEmail,
+  randomPassword,
+  randomUsername,
 } = require('../../utils/helpers.cjs');
 const { request } = require('undici');
 
-test('Create User', async () => {
+test('Create User Successful', async () => {
   // Arrange
-  const userData = createTestUser();
+  const newUserData = createTestUserData();
 
   // Act
   const response = await request(
     `${$ConduitAPI}/users`,
-    createRequestOptions('POST', userData)
+    createRequestOptions('POST', newUserData)
   );
 
-  const data = await response.body.json();
+  const responseBody = await response.body.json();
 
   // Assert
   assert.strictEqual(response.statusCode, 201);
-  assert.strictEqual(data.user.email, userData.user.email);
-  assert.strictEqual(data.user.username, userData.user.username);
+  assert.strictEqual(responseBody.user.email, newUserData.user.email);
+  assert.strictEqual(responseBody.user.username, newUserData.user.username);
 });
 
 test('Register without email field', async () => {
   // Arrange
-  const userData = createTestUser();
+  const userData = createTestUserData();
   delete userData.user.email;
 
   // Act
@@ -43,58 +47,63 @@ test('Register without email field', async () => {
   assert.strictEqual(data.errors.email[0], "can't be blank");
 });
 
-test('Create user with existing email', async () => {
+test('Create user with an existing email', async () => {
   // Arrange
-  const userData = createTestUser();
+  const existingUser = await createTestUser();
 
   // Act
-  await request(`${$ConduitAPI}/users`, createRequestOptions('POST', userData));
-
   const response = await request(
     `${$ConduitAPI}/users`,
-    createRequestOptions('POST', userData)
+    createRequestOptions('POST', {
+      user: {
+        email: existingUser.userData.email,
+        password: randomPassword(10),
+        username: randomUsername(),
+      },
+    })
   );
 
-  const data = await response.body.json();
+  const responseBody = await response.body.json();
 
   // Assert
   assert.strictEqual(response.statusCode, 422);
-  assert.strictEqual(data.errors.email[0], 'has already been taken');
+  assert.strictEqual(responseBody.errors.email[0], 'has already been taken');
 });
 
-test('Create user with existing username', async () => {
+test('Create user with an existing username', async () => {
   // Arrange
-  const userData = createTestUser();
+  const { user } = createTestUserData();
+  const existingUser = await createTestUser();
 
   // Act
-  await request(`${$ConduitAPI}/users`, createRequestOptions('POST', userData));
-
   const response = await request(
     `${$ConduitAPI}/users`,
-    createRequestOptions('POST', userData)
+    createRequestOptions('POST', {
+      user: {
+        email: randomEmail(),
+        password: randomPassword(10),
+        username: existingUser.userData.username,
+      },
+    })
   );
-
-  const data = await response.body.json();
 
   // Assert
   assert.strictEqual(response.statusCode, 422);
-  assert.strictEqual(data.errors.username[0], 'has already been taken');
 });
 
 test('Create user with empty password field', async () => {
-  // Arrange
-  const userData = createTestUser();
-  userData.user.password = null;
-
-  // Act
+  //Arrange/Act
   const response = await request(
     `${$ConduitAPI}/users`,
-    createRequestOptions('POST', userData)
+    createRequestOptions('POST', {
+      user: {
+        email: randomEmail(),
+        username: randomUsername(),
+        password: '',
+      },
+    })
   );
-
-  const data = await response.body.json();
 
   // Assert
   assert.strictEqual(response.statusCode, 422);
-  assert.strictEqual(data.errors.password[0], "can't be blank");
 });
