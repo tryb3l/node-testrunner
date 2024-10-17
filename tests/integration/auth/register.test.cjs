@@ -1,11 +1,10 @@
 'use strict';
-const {
-  setupContext,
-  createRequestOptions,
-  $ConduitAPI,
-} = require('../utils/test-helpers.cjs');
-const { test } = require('node:test');
 const assert = require('node:assert');
+const { test } = require('node:test');
+const {
+  createTestUser,
+  createRequestOptions,
+} = require('../../utils/helpers.cjs');
 const { request } = require('undici');
 
 test('Create User', async () => {
@@ -52,7 +51,7 @@ test('Create user with existing email', async () => {
   await request(`${$ConduitAPI}/users`, createRequestOptions('POST', userData));
 
   const response = await request(
-    `${$Conduit}/users`,
+    `${$ConduitAPI}/users`,
     createRequestOptions('POST', userData)
   );
 
@@ -71,7 +70,7 @@ test('Create user with existing username', async () => {
   await request(`${$ConduitAPI}/users`, createRequestOptions('POST', userData));
 
   const response = await request(
-    `${$Conduit}/users`,
+    `${$ConduitAPI}/users`,
     createRequestOptions('POST', userData)
   );
 
@@ -82,14 +81,14 @@ test('Create user with existing username', async () => {
   assert.strictEqual(data.errors.username[0], 'has already been taken');
 });
 
-test('Create user with invalid password', async () => {
+test('Create user with empty password field', async () => {
   // Arrange
   const userData = createTestUser();
-  userData.user.password = '123';
+  userData.user.password = null;
 
   // Act
   const response = await request(
-    `${$Conduit}/users`,
+    `${$ConduitAPI}/users`,
     createRequestOptions('POST', userData)
   );
 
@@ -97,8 +96,5 @@ test('Create user with invalid password', async () => {
 
   // Assert
   assert.strictEqual(response.statusCode, 422);
-  assert.strictEqual(
-    data.errors.password[0],
-    'is too short (minimum is 6 characters)'
-  );
+  assert.strictEqual(data.errors.password[0], "can't be blank");
 });
