@@ -7,7 +7,7 @@ const {
   randomString,
   randomStringWithPrefix,
   randomUsername,
-} = require('../utils/data-creator.cjs');
+} = require('../utils/data/data-generators.cjs');
 const { test } = require('node:test');
 
 test('randomEmail generates a valid email address', () => {
