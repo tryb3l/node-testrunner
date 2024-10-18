@@ -1,5 +1,5 @@
 'use strict';
-const { generateKey } = require('./crypto.cjs');
+const { generateKey } = require('../crypto/crypto.cjs');
 
 /**
  * Date formats.
