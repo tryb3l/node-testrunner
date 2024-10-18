@@ -7,7 +7,7 @@
 - [Introduction](#introduction)
   - [Best Practices and Design Decisions](#best-practices-and-design-decisions)
 - [Project Structure](#project-structure)
-- Features
+- [Features](#features)
   - [Native Node.js Test Runner](#native-nodejs-test-runner)
   - [Minimal Dependencies](#minimal-dependencies)
   - [Modular and Scalable Structure](#modular-and-scalable-structure)
