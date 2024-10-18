@@ -1,0 +1,22 @@
+name: Node.js CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+      - name: Use Node.js 23
+        uses: actions/setup-node@v3
+        with:
+          node-version: 23
+      - run: npm ci
+      - run: node --run test:all
+        env:
+          CONDUIT_API: https://conduit-api.bondaracademy.com/api
