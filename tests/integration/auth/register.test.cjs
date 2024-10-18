@@ -1,109 +1,227 @@
 'use strict';
+
 const assert = require('node:assert');
-const { test } = require('node:test');
-const {
-  createTestUser,
-  createTestUserData,
-  createRequestOptions,
-  randomEmail,
-  randomPassword,
-  randomUsername,
-} = require('../../utils/helpers.cjs');
+const { test, describe } = require('node:test');
 const { request } = require('undici');
+const {
+  getTestUserData,
+  createTestUserData,
+} = require('../../utils/user/user-utils.cjs');
+const { env } = require('../../utils/env.cjs');
+const { createRequestOptions } = require('../../utils/http/http-utils.cjs');
 
-test('Create User Successful', async () => {
-  // Arrange
-  const newUserData = createTestUserData();
+const $ConduitAPI = env.conduitAPI;
+const testUserData = getTestUserData().user;
 
-  // Act
-  const response = await request(
-    `${$ConduitAPI}/users`,
-    createRequestOptions('POST', newUserData)
-  );
+describe('User Registration Tests', () => {
+  test('Register with valid data should succeed', async () => {
+    // Arrange
+    const newUserData = createTestUserData();
 
-  const responseBody = await response.body.json();
+    // Act
+    const response = await request(
+      `${$ConduitAPI}/users`,
+      createRequestOptions('POST', newUserData)
+    );
+    const responseBody = await response.body.json();
 
-  // Assert
-  assert.strictEqual(response.statusCode, 201);
-  assert.strictEqual(responseBody.user.email, newUserData.user.email);
-  assert.strictEqual(responseBody.user.username, newUserData.user.username);
-});
+    // Assert
+    assert.strictEqual(response.statusCode, 201, 'Expected status code 201');
+    assert.strictEqual(
+      responseBody.user.email,
+      newUserData.user.email,
+      'Email should match'
+    );
+    assert.strictEqual(
+      responseBody.user.username,
+      newUserData.user.username,
+      'Username should match'
+    );
+    assert.ok(
+      responseBody.user.token,
+      'Token should be returned upon registration'
+    );
+  });
 
-test('Register without email field', async () => {
-  // Arrange
-  const userData = createTestUserData();
-  delete userData.user.email;
+  test('Register without email field should fail', async () => {
+    // Arrange
+    const newUserData = createTestUserData();
+    delete newUserData.user.email;
 
-  // Act
-  const response = await request(
-    `${$ConduitAPI}/users`,
-    createRequestOptions('POST', userData)
-  );
+    // Act
+    const response = await request(
+      `${$ConduitAPI}/users`,
+      createRequestOptions('POST', newUserData)
+    );
+    const responseBody = await response.body.json();
 
-  const data = await response.body.json();
+    // Assert
+    assert.strictEqual(response.statusCode, 422, 'Expected status code 422');
+    assert.strictEqual(
+      responseBody.errors.email[0],
+      "can't be blank",
+      'Should return email cannot be blank error'
+    );
+  });
 
-  // Assert
-  assert.strictEqual(response.statusCode, 422);
-  assert.strictEqual(data.errors.email[0], "can't be blank");
-});
+  test('Register without password field should fail', async () => {
+    // Arrange
+    const newUserData = createTestUserData();
+    delete newUserData.user.password;
 
-test('Create user with an existing email', async () => {
-  // Arrange
-  const existingUser = await createTestUser();
+    // Act
+    const response = await request(
+      `${$ConduitAPI}/users`,
+      createRequestOptions('POST', newUserData)
+    );
+    const responseBody = await response.body.json();
 
-  // Act
-  const response = await request(
-    `${$ConduitAPI}/users`,
-    createRequestOptions('POST', {
+    // Assert
+    assert.strictEqual(response.statusCode, 422, 'Expected status code 422');
+    assert.strictEqual(
+      responseBody.errors.password[0],
+      "can't be blank",
+      'Should return password cannot be blank error'
+    );
+  });
+
+  test('Register without username field should fail', async () => {
+    // Arrange
+    const newUserData = createTestUserData();
+    delete newUserData.user.username;
+
+    // Act
+    const response = await request(
+      `${$ConduitAPI}/users`,
+      createRequestOptions('POST', newUserData)
+    );
+    const responseBody = await response.body.json();
+
+    // Assert
+    assert.strictEqual(response.statusCode, 422, 'Expected status code 422');
+    assert.strictEqual(
+      responseBody.errors.username[0],
+      "can't be blank",
+      'Should return username cannot be blank error'
+    );
+  });
+
+  test('Register with existing email should fail', async () => {
+    // Arrange
+    const newUserData = { user: testUserData };
+
+    // Act
+    const response = await request(
+      `${$ConduitAPI}/users`,
+      createRequestOptions('POST', newUserData)
+    );
+    const responseBody = await response.body.json();
+
+    // Assert
+    assert.strictEqual(response.statusCode, 422, 'Expected status code 422');
+    assert.strictEqual(
+      responseBody.errors.email[0],
+      'has already been taken',
+      'Should return email has already been taken error'
+    );
+  });
+
+  test('Register with existing username should fail', async () => {
+    // Arrange
+    const newUserData = { user: testUserData };
+
+    // Act
+    const response = await request(
+      `${$ConduitAPI}/users`,
+      createRequestOptions('POST', newUserData)
+    );
+    const responseBody = await response.body.json();
+
+    // Assert
+    assert.strictEqual(response.statusCode, 422, 'Expected status code 422');
+    assert.strictEqual(
+      responseBody.errors.username[0],
+      'has already been taken',
+      'Should return username has already been taken error'
+    );
+  });
+
+  test('Register with invalid email format should fail', async () => {
+    // Arrange
+    const newUserData = createTestUserData();
+    newUserData.user.email = 'invalid-email';
+
+    // Act
+    const response = await request(
+      `${$ConduitAPI}/users`,
+      createRequestOptions('POST', newUserData)
+    );
+    const responseBody = await response.body.json();
+
+    // Assert
+    assert.strictEqual(response.statusCode, 422, 'Expected status code 422');
+    assert.ok(
+      responseBody.errors.email,
+      'Should return error for invalid email format'
+    );
+  });
+
+  test('Register without password should fail', async () => {
+    // Arrange
+    const newUserData = createTestUserData();
+    newUserData.user.password = '';
+
+    // Act
+    const response = await request(
+      `${$ConduitAPI}/users`,
+      createRequestOptions('POST', newUserData)
+    );
+    const responseBody = await response.body.json();
+
+    // Assert
+    assert.strictEqual(response.statusCode, 422, 'Expected status code 422');
+    assert.ok(
+      responseBody.errors.password,
+      'Should return error for password being too short'
+    );
+  });
+
+  test('Register with empty request body should fail', async () => {
+    // Arrange
+    const newUserData = {};
+
+    // Act
+    const response = await request(
+      `${$ConduitAPI}/users`,
+      createRequestOptions('POST', newUserData)
+    );
+    const responseBody = await response.body.json();
+
+    // Assert
+    assert.strictEqual(response.statusCode, 422, 'Expected status code 422');
+    assert.ok(
+      responseBody.errors,
+      'Should return errors for missing user data'
+    );
+  });
+
+  test('Register with all fields empty should fail', async () => {
+    // Arrange
+    const newUserData = {
       user: {
-        email: existingUser.userData.email,
-        password: randomPassword(10),
-        username: randomUsername(),
-      },
-    })
-  );
-
-  const responseBody = await response.body.json();
-
-  // Assert
-  assert.strictEqual(response.statusCode, 422);
-  assert.strictEqual(responseBody.errors.email[0], 'has already been taken');
-});
-
-test('Create user with an existing username', async () => {
-  // Arrange
-  const { user } = createTestUserData();
-  const existingUser = await createTestUser();
-
-  // Act
-  const response = await request(
-    `${$ConduitAPI}/users`,
-    createRequestOptions('POST', {
-      user: {
-        email: randomEmail(),
-        password: randomPassword(10),
-        username: existingUser.userData.username,
-      },
-    })
-  );
-
-  // Assert
-  assert.strictEqual(response.statusCode, 422);
-});
-
-test('Create user with empty password field', async () => {
-  //Arrange/Act
-  const response = await request(
-    `${$ConduitAPI}/users`,
-    createRequestOptions('POST', {
-      user: {
-        email: randomEmail(),
-        username: randomUsername(),
+        email: '',
         password: '',
+        username: '',
       },
-    })
-  );
+    };
 
-  // Assert
-  assert.strictEqual(response.statusCode, 422);
+    // Act
+    const response = await request(
+      `${$ConduitAPI}/users`,
+      createRequestOptions('POST', newUserData)
+    );
+
+    // Assert
+    assert.strictEqual(response.statusCode, 422, 'Expected status code 422');
+  });
 });
